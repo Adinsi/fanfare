@@ -1,0 +1,5 @@
+Mardi
+1-Relire le code et corriger d'évantuel burg
+2- Implémanter la solution de Fedapay et la note d'évaluation
+3- FAIS LA CHARTE DU PROJET ET LE CHAIER DE CHARGE 
+4- AJOUTER LES AUTRES FONCTIONNALITEES DANS LE FRONT-END
