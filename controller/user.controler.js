@@ -742,7 +742,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       const doc = new PDFDocument();
       const filePath = path.join(
         __dirname,
-        "../client/public/borderau",
+        "../client/build/borderau",
         `${user._id}_carte.pdf`
       );
 
@@ -826,7 +826,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       const doc = new PDFDocument();
       const filePath = path.join(
         __dirname,
-        "../client/public/borderau/cancel",
+        "../client/build/borderau/cancel",
         `${user._id}_carte.pdf`
       );
       doc.pipe(fs.createWriteStream(filePath));

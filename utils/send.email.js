@@ -70,7 +70,7 @@ module.exports.borderauSucees = async (email, fileName) => {
       {
         // path: fileName,
         filename: fileName,
-        path: path.join(__dirname, "../client/public/borderau", fileName),
+        path: path.join(__dirname, "../client/build/borderau", fileName),
         contentType: "application/pdf",
       },
     ],
@@ -94,11 +94,7 @@ module.exports.borderauCancel = async (email, fileName) => {
     attachments: [
       {
         filename: fileName,
-        path: path.join(
-          __dirname,
-          "../client/public/borderau/cancel",
-          fileName
-        ),
+        path: path.join(__dirname, "../client/build/borderau/cancel", fileName),
         contentType: "application/pdf",
       },
     ],
