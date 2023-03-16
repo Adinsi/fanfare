@@ -158,8 +158,8 @@ app.get("/admin/home-liste", function (req, res) {
 app.get("/admin/home-note", function (req, res) {
   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
 });
-app.use("/api/user", userRoute);
 app.use("/api/partition", userPartition);
+app.use("/api/user", userRoute);
 
 app.listen(port || 7500, () =>
   console.log(`Le serveur est démarrer sur le port ${port}`)
