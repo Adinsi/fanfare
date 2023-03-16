@@ -16,9 +16,6 @@ const session = require("express-session");
 require("./test/test");
 const cron = require("node-cron");
 const User = require("./modeles/user");
-
-const moment = require("moment-timezone");
-
 // Définir le fuseau horaire souhaité
 const timezone = "Africa/Porto-Novo"; // Fuseau horaire du Bénin
 
