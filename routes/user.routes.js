@@ -1,7 +1,28 @@
 const router = require("express").Router();
 const auth_controller = require("../controller/user.controler");
+
+const partition_controller = require("../controller/partition.controller");
 const middleware = require("../middlewre/verify.token");
 const multer = require("multer");
+
+const storages = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./client/build/partition");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${file.originalname}`);
+  },
+});
+const uploads = multer({ storage: storages });
+router.get(
+  "/read",
+  partition_controller.readPartition
+); /**Lire une partition */
+router.post(
+  "/create",
+  uploads.single("partition"),
+  partition_controller.createPartition
+); /**Créer une partition */
 
 /*Multer callback function */
 
@@ -14,7 +35,7 @@ const storage = multer.diskStorage({
     cb(null, `${req.body.userId}.jpg`);
   },
 });
-const uploads = multer({ storage: storage });
+const upload = multer({ storage: storage });
 
 //Auth router
 /**Inscription de l'utilisateur */
@@ -53,7 +74,7 @@ router.get("/jwt", middleware.verifyToken, middleware.getUser);
 /**Télécharger un fichier de profil */
 router.post(
   "/upload",
-  uploads.single("user"),
+  upload.single("user"),
 
   auth_controller.upload_profil
 );

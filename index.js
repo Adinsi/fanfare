@@ -6,7 +6,7 @@ const cors = require("cors");
 const csrf = require("csurf");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
-const userPartition = require("./routes/partition.routes");
+
 const userRoute = require("./routes/user.routes");
 const rate_limiter = require("./utils/rate.limiter");
 const helmet = require("helmet");
@@ -158,7 +158,7 @@ app.get("/admin/home-liste", function (req, res) {
 app.get("/admin/home-note", function (req, res) {
   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
 });
-app.use("/api/partition", userPartition);
+
 app.use("/api/user", userRoute);
 
 app.listen(port || 7500, () =>
