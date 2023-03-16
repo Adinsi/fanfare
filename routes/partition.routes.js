@@ -16,7 +16,6 @@ router.get("/read", partition_controler.readPartition); /**Lire une partition */
 router.post(
   "/create",
   uploads.single("partition"),
-  middleware.verifyToken,
   partition_controler.createPartition
 ); /**Créer une partition */
 
