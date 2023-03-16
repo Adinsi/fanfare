@@ -666,7 +666,7 @@ module.exports.sendIdTransaction = async_handler(async (req, res) => {
   /*Vérifiez si l'id est de 10 chiffre */
   if (!validator.isLength(idVerified, { min: 10, max: 10 }))
     return res.status(401).json({
-      message: `La longeur de l'id de transaction que vous avez réçu de MTN n'est pas correcte. Vérifez bien bien les chiffres`,
+      message: `La longeur de l'id de transaction que vous avez réçu de MTN n'est pas correcte. Vérifez bien les chiffres`,
     });
   /**Vérifiez si l'identifiant existe */
   let user;
