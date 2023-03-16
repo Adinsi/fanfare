@@ -271,7 +271,7 @@ module.exports.login = async_handler(async (req, res) => {
         ) /**Durée de vie du cookie qui est de 7 jours */,
         httpOnly: true, //Only server
         sameSite: `lax`, //cross site, empêcher les réquêtes d'autres domaines
-        // secure: true, // https
+        secure: true, // https
       });
 
       /**Réponse finale quand il est authentifié */
