@@ -131,7 +131,6 @@ module.exports.register = async_handler(async (req, res) => {
       /**Vérifiez si l''email correspond a celle de l'admin pour lui permetttre d'avoir accès à certaine route */
       function isAdmin() {
         if (
-          email === process.env.USER ||
           email === process.env.USER_Proph
 
           // email === process.env.USER_SOPRANO ||
@@ -151,6 +150,9 @@ module.exports.register = async_handler(async (req, res) => {
           email === process.env.USER_Proph
         )
           return true;
+      }
+      function isAdminDev() {
+        if (email === process.env.USER) return true;
       }
       /**Enregister user dans la base de donnée */
       const user = await new User({
@@ -179,6 +181,7 @@ module.exports.register = async_handler(async (req, res) => {
           isAdmin() /**Mettre à jours l'objet isAdmin si l'email est celle de userAdmin */,
         isAdminPupitre: isAdminPupitre(),
         isSuperAdmin: isSuperAdmin(),
+        isAdminDev: isAdminDev(),
       });
       user.save(); /**Enrégister l'utilisateur dans la bd */
 

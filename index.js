@@ -22,15 +22,6 @@ const moment = require("moment-timezone");
 // Définir le fuseau horaire souhaité
 const timezone = "Africa/Porto-Novo"; // Fuseau horaire du Bénin
 
-// Planifier une tâche avec cron
-// cron.schedule("* * * * *", () => {
-//   // Obtenir l'heure actuelle dans le fuseau horaire spécifié
-//   const currentTime = moment().tz(timezone).format("HH:mm:ss");
-//   console.log(
-//     `L'heure actuelle dans le fuseau horaire ${timezone} est ${currentTime}`
-//   );
-// });
-
 // Environnement variable
 const port = process.env.PORT;
 const origineClient = process.env.CLIENT_URL;
@@ -92,68 +83,78 @@ const initializeUsersAverage = async () => {
 // cron.schedule("0 0 1 * *", initializeUsersAverage);
 // console.log("La tâche d'initialisation a été planifiée.");
 
-// app.use(express.static(path.join(__dirname, "./client/build")));
-// app.use(express.static(path.join(__dirname, "./client/build/image/user")));
-
-// app.get("/", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/register", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/home", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/partition", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/carte", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/profil", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/forget", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/reset/:token", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/notification", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/education", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/validation", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/transaction", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/admin", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/admin/home-users", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/admin/home-validate", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
-// app.get("/admin/home-liste", function (req, res) {
-//   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
-// });
 // app.use(cookieParser()); //Lire les cookies
 app.use(rate_limiter(100, 60000)); //Limiter les réquêtes abusées
 app.use(cors({ credentials: true, origin: origineClient })); //L'origine des requêtes
 app.use(bodyParser.json()); //Transformer nos corps en json
 app.use(bodyParser.urlencoded({ extended: true }));
-//localhost:7200/home
 
 // Own routes..
 // app.get("*", (req, res) => {
 //   res.sendFile(path.join(__dirname, "./client/build/index.html"));
 // });
+// app.use(express.static(path.join(__dirname, "./client/build/image/user")));
+app.use(express.static(path.join(__dirname, "./client/build")));
+
+app.get("/", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+
+app.get("/register", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/home", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+
+app.get("/politique", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/partition", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/partition/:id", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/carte", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/profil", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/forget", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/reset/:token", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/notification", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/education", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/validation", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/transaction", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/admin", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/admin/home-users", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/admin/home-validate", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/admin/home-liste", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
+app.get("/admin/home-note", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
 app.use("/api/user", userRoute);
 app.use("/api/partition", userPartition);
 

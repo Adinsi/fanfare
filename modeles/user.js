@@ -109,6 +109,10 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isAdminDev: {
+      type: Boolean,
+      default: false,
+    },
     isAdminPupitre: {
       type: Boolean,
       default: false,
