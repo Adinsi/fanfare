@@ -5,7 +5,8 @@ const Partition = require("../modeles/partition");
 module.exports.createPartition = async (req, res) => {
   const { posterId, title, auteur, gamme } = req.body;
   /**Vérifiez si le poster id est celle de l'administrateur si noon renvoyer une erreur 404  */
-  if (posterId !== process.env.User)
+
+  if (posterId !== process.env.USER)
     return res.status(404).json({ message: `Vous n'étes pas autorisé` });
   /**Envoyer les données dans notre base de donnée */
   const newPartition = new Partition({
