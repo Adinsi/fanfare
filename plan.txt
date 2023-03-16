@@ -3,3 +3,41 @@ Mardi
 2- Implémanter la solution de Fedapay et la note d'évaluation
 3- FAIS LA CHARTE DU PROJET ET LE CHAIER DE CHARGE 
 4- AJOUTER LES AUTRES FONCTIONNALITEES DANS LE FRONT-END
+
+
+/**Les votes **/
+1- Prémièrement les candidats se porteront volontaire, maximum 3 candidats
+
+Démander au membre d'être volontaire
+
+module.exports.volontaire = async(req,res)=>{
+    let user;
+
+    user = await User.findOne(_id : req.params.id)
+    if(!user) return res.status(401).json({
+        message : "Vous n'êtes pas autorisé a être candidat"
+    })
+    user.find({
+        Faire un map et voir si le nombre de personne avec candidat est dupéruer ou égale a 3
+    })
+    if(userCandiadt >= 3 ) return res.status(401).json({
+        message : "Le nombre de candiadt est déja saturé"
+    })
+
+    user.updateOne({
+        candidat : true,
+        increment : ""
+    })
+
+    return res.status(200).json({message:"Félicitation"})
+
+}
+
+/**Dans notre client*/
+on faire un map de touts les utilisateurs ayant un objet candidat à true
+On présente nos candidats
+Avec un button voter pour nos candidats
+
+/****Dans Backend**/
+User ne doit pas voter deux fois
+Quand il vote on increment l'objet increment du candidat en prenant son id en paramètre

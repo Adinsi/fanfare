@@ -68,6 +68,6 @@ module.exports.getUser = async_handler(async (req, res) => {
       return res.status(200).json({ user });
     }
   } catch (error) {
-    res.status(404).json({ message: "L'utilisateur n'existe pas" });
+    res.status(404).json({ message: `L'utilisateur n'existe pas ${error}` });
   }
 });

@@ -4,9 +4,10 @@ const middleware = require("../middlewre/verify.token");
 const multer = require("multer");
 
 /*Multer callback function */
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "./client/build/image/user");
+    cb(null, "./client/public/image/user");
   },
 
   filename: (req, file, cb) => {
@@ -18,7 +19,6 @@ const uploads = multer({ storage: storage });
 //Auth router
 /**Inscription de l'utilisateur */
 router.post("/register", auth_controller.register);
-router.post("/souscription/:id", auth_controller.souscription);
 
 /**Reçevoir le pdf du règlément intérieur du groupe fanfare */
 router.post(
@@ -50,14 +50,23 @@ router.get(
 
 /**Vérifiez si son token est valide en renvoyant ses informations sans son mot de passse*/
 router.get("/jwt", middleware.verifyToken, middleware.getUser);
+/**Télécharger un fichier de profil */
+router.post(
+  "/upload",
+  uploads.single("user"),
+
+  auth_controller.upload_profil
+);
 
 /**Faire la liste de présence toutls les lundis à partir de 17h00 à 19h30 */
 router.post("/liste/:userId", auth_controller.updateUserStatus);
+/**Evaluer les membres */
 router.post("/note/:id", auth_controller.Evaluer);
 
 /**La prémière liste de présence de 50 personne */
-router.get("/liste", auth_controller.sendPdfListe);
-/**La prémière liste d'évaluation */
+
+router.get("/liste/:id", auth_controller.sendPdfListe);
+/**La liste d'évaluation */
 router.get("/note", auth_controller.sendPdfListeEvaluation);
 
 /**Connexion */
@@ -65,6 +74,9 @@ router.post("/login", auth_controller.login);
 
 /**Procédure de changement du mot de passe */
 router.post("/forget", auth_controller.forgetPassword);
+
+/**Souscrire un membre pour les 3 premier mois */
+router.post("/souscription/:id", auth_controller.souscrireUnMembre);
 
 /**Mettre un nouveau mot de passe */
 router.put("/reset/:token", auth_controller.resetPassword);
@@ -82,9 +94,6 @@ router.put(
 
 /**Suppromer un utilisateur de la base de donnée */
 router.delete("/delete/:id", auth_controller.deleteUser);
-
-/**Télécharger un fichier de profil */
-router.post("/upload", uploads.single("user"), auth_controller.upload_profil);
 
 /**Récuperer touts les utilisateurs */
 router.get("/", auth_controller.getAllUsers);

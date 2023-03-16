@@ -1,0 +1,5 @@
+1- Prendre l'email des admins et les mettres dans la variable
+2- Corriger le lien de souscription et celle de carte consulaire
+4-Corriger la photo lors de l'envoi , changer l'image et mettre celle de la grâce parle
+5- Créer un  groupe et les mettre au fil à mésure ou il s'inscrivent
+6- 

@@ -1183,3 +1183,52 @@ module.exports.sendPdfListe = async_handler(async (req, res) => {
 
   // }
 });
+/**Transaction touts les 3 mois  */
+module.exports.souscription = async_handler(async (req, res, next) => {
+  let user;
+  /* Remplacez VOTRE_CLE_API par votre véritable clé API */
+  FedaPay.setApiKey(process.env.ApiSecrete);
+
+  /* Précisez si vous souhaitez exécuter votre requête en mode test ou live */
+  FedaPay.setEnvironment("sandbox"); //ou setEnvironment('live');
+  /**Vérifier s'il existe */
+  try {
+    user = await User.findById({ _id: req.params.id });
+  } catch (error) {
+    res.status(500).json({
+      message: `Erreur interne du serveur,veuillez reprendre l'opération du changement du mot de passe`,
+    });
+  }
+  if (!user)
+    return res.status(401).json({
+      message: `Vous n'ètes pas autorisé à éffectué cette trasaction`,
+    });
+  /*Créer la transaction */
+  await Transaction.create({
+    description: "Souscription",
+    amount: 100,
+    callback_url: "http://localhost:3000/home",
+    currency: {
+      iso: "XOF",
+    },
+    customer: {
+      firstname: user.firstName,
+      lastname: user.lastName,
+      email: user.email,
+      phone_number: {
+        number: user.tel,
+        country: "BJ",
+      },
+    },
+  })
+    .then(function (transaction) {
+      console.log(JSON.stringify(transaction));
+    })
+    .catch(function (error) {
+      console.error(error);
+    });
+
+  // const token = await transaction.generateToken();
+  // redirect(token.url);
+  // return res.status(200).json({ message: "ok" });
+});

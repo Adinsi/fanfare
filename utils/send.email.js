@@ -65,7 +65,7 @@ module.exports.borderauSucees = async (email, fileName) => {
     to: email,
     subject: "Borderau de paiement",
 
-    text: "Votre borderau de paiement de votre carte numérique d'identification",
+    text: "Votre borderau de paiement de votre carte numérique d'identification personnelle",
     attachments: [
       {
         // path: fileName,

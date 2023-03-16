@@ -34,7 +34,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 /*{Authentification controleur}*/
-/**Inscription d'un utilisateur du groupe fanfare */
+/**1...Inscription d'un utilisateur du groupe fanfare */
 module.exports.register = async_handler(async (req, res) => {
   let user;
   const {
@@ -48,29 +48,14 @@ module.exports.register = async_handler(async (req, res) => {
     email,
     sexe,
   } = req.body;
-  /*1 - Verifiez d'abord s'il s'est déja inscrit, il cherchera l'email ou le numéro de téléphone lors de l'insertion dans la bd avec la méthode findOne de mongoose puisqu'il est unique par utulisateur. L'erreur sera recuperer dans le bloc catch*/
-
-  try {
-    user = await User.findOne({ $or: [{ email }, { tel }] });
-  } catch (error) {
-    res.status(500).json({
-      message: `Erreur interne du serveur, veuillez réessayer plus tard ! `,
-    });
-  }
-  /**Si l'email est trouver, lui renvoyé une réponse 403 qu'il est déja pris */
-  if (user)
-    return res.status(403).json({
-      message: `L'utilisateur avec cet email ou tél existe déjà. Veuillez-vous connectez`,
-    });
-
-  /*2 - Vérifiez maintenant si les données saisir respecte notre schéma de validation */
+  /*1 - Vérifiez maintenant si les données saisir respecte notre schéma de validation */
 
   if (
     !validator.isLength(firstName, { min: 2, max: 15 }) ||
     !validator.isLength(lastName, { min: 2, max: 35 })
   )
     return res.status(401).json({
-      message: `Vérifez si le nom ou prénom est valide`,
+      message: `Vérifez si le nom ou prénom saisir est valide`,
     });
   /**Vérifiez s'il respecte le format d'un email grâce à l'expression régulier de validator xxxxxxx@xxxxx.xxx */
   if (!validator.isEmail(email))
@@ -100,7 +85,21 @@ module.exports.register = async_handler(async (req, res) => {
   /**Permettre a notre user de metrtre un mot de passe sécurisé en le forçant à y mettre plus de 5  */
   if (!validator.isLength(password, { min: 5, max: 15 }))
     return res.status(401).json({
-      message: `Choisissez un mot de passe à 6 caractère minimum`,
+      message: `Choisissez un mot de passe à 5 caractère minimum`,
+    });
+  /*2 - Verifiez maintenant s'il s'est déja inscrit, il cherchera l'email ou le numéro de téléphone lors de l'insertion dans la bd avec la méthode findOne de mongoose puisqu'il est unique par utulisateur. L'erreur sera recuperer dans le bloc catch*/
+
+  try {
+    user = await User.findOne({ $or: [{ email }, { tel }] });
+  } catch (error) {
+    res.status(500).json({
+      message: `Erreur interne du serveur, veuillez réessayer plus tard ! `,
+    });
+  }
+  /**Si l'email est trouver, lui renvoyé une réponse 403 qu'il est déja pris */
+  if (user)
+    return res.status(403).json({
+      message: `L'utilisateur avec cet email ou tél existe déjà. Veuillez-vous connectez`,
     });
 
   /* 3 - Crypter le mot de passe avec bcrypt avant l'insertion dans la bd , générer un code à 4 chiffre d'identification, puis génerer des informations dans notre code qr */
@@ -131,10 +130,27 @@ module.exports.register = async_handler(async (req, res) => {
         });
       /**Vérifiez si l''email correspond a celle de l'admin pour lui permetttre d'avoir accès à certaine route */
       function isAdmin() {
-        if (email === process.env.USER) return true;
+        if (
+          email === process.env.USER ||
+          email === process.env.USER_Proph
+
+          // email === process.env.USER_SOPRANO ||
+          // email === process.env.USER_ALTO ||
+          // email === process.env.USER_TENOR ||
+          // email === process.env.USER_BASE ||
+          // email === process.env.USER_DRUM ||
+        )
+          return true;
       }
       function isAdminPupitre() {
         if (email === process.env.ADMINPUPITRE) return true;
+      }
+      function isSuperAdmin() {
+        if (
+          email === process.env.ADMINPUPITRE ||
+          email === process.env.USER_Proph
+        )
+          return true;
       }
       /**Enregister user dans la base de donnée */
       const user = await new User({
@@ -162,6 +178,7 @@ module.exports.register = async_handler(async (req, res) => {
         isAdmin:
           isAdmin() /**Mettre à jours l'objet isAdmin si l'email est celle de userAdmin */,
         isAdminPupitre: isAdminPupitre(),
+        isSuperAdmin: isSuperAdmin(),
       });
       user.save(); /**Enrégister l'utilisateur dans la bd */
 
@@ -180,9 +197,11 @@ module.exports.register = async_handler(async (req, res) => {
           await sendEmail(user.email, `Code numérique d'identification`, html);
         }
       });
+      /**Envoi du code sur le numéro de l'utilisateur */
+
       /**Réponse finale lorque tous se passe bien */
       return res.status(201).json({
-        message: `Nous venons d'envoyer un code à 4 chiffre à votre adresse mail que vous devrez mémoriser`,
+        message: `Nous venons d'envoyer votre code d'identification personnele à 4 chiffre à votre adresse mail que vous pouvez consulter`,
       });
     });
   } catch (error) {
@@ -192,62 +211,11 @@ module.exports.register = async_handler(async (req, res) => {
   }
 });
 
-/**Transaction touts les 3 mois  */
-module.exports.souscription = async_handler(async (req, res, next) => {
-  let user;
-  /* Remplacez VOTRE_CLE_API par votre véritable clé API */
-  FedaPay.setApiKey(process.env.ApiSecrete);
-
-  /* Précisez si vous souhaitez exécuter votre requête en mode test ou live */
-  FedaPay.setEnvironment("sandbox"); //ou setEnvironment('live');
-  /**Vérifier s'il existe */
-  try {
-    user = await User.findById({ _id: req.params.id });
-  } catch (error) {
-    res.status(500).json({
-      message: `Erreur interne du serveur,veuillez reprendre l'opération du changement du mot de passe`,
-    });
-  }
-  if (!user)
-    return res.status(401).json({
-      message: `Vous n'ètes pas autorisé à éffectué cette trasaction`,
-    });
-  /*Créer la transaction */
-  await Transaction.create({
-    description: "Souscription",
-    amount: 100,
-    callback_url: "http://localhost:3000/home",
-    currency: {
-      iso: "XOF",
-    },
-    customer: {
-      firstname: user.firstName,
-      lastname: user.lastName,
-      email: user.email,
-      phone_number: {
-        number: user.tel,
-        country: "BJ",
-      },
-    },
-  })
-    .then(function (transaction) {
-      console.log(JSON.stringify(transaction));
-    })
-    .catch(function (error) {
-      console.error(error);
-    });
-
-  // const token = await transaction.generateToken();
-  // redirect(token.url);
-  // return res.status(200).json({ message: "ok" });
-});
-
-module.exports.souscriptionOne = async_handler(async (req, res) => {});
-/**Connexion d'un mambre du groupe fanfare */
+/**2...Connexion d'un membre du groupe fanfare */
 module.exports.login = async_handler(async (req, res) => {
   const { identifier, password } = req.body;
 
-  /*1 - Vérifiez maintenant si les données saisir respecte notre schéma de validation */
+  /*1 - Vérifiez maintenant si les données saisir respecte nos schémas de validation */
   if (!identifier || !password)
     return res
       .status(401)
@@ -272,12 +240,12 @@ module.exports.login = async_handler(async (req, res) => {
           message: `Vous n'avez pas de compte avec ces informations d'identification, veuillez vous inscrire en premier.`,
         });
       /*Vérifiez si quelqu'un à déja initialisé un changement de mot de passe */
-      if (user.resetPasswordExpires !== null)
-        return res.status(401).json({
-          message: `Veuillez changer votre mot de passe pour des raisons de sécurité si vous n'êtes pas l'auteur de la procédure de changement du mot de passe du ${dateFormat(
-            user.resetPasswordExpires
-          )}`,
-        });
+      // if (user.resetPasswordExpires !== null)
+      //   return res.status(401).json({
+      //     message: `Veuillez changer votre mot de passe pour des raisons de sécurité si vous n'êtes pas l'auteur de la procédure de changement du mot de passe du ${dateFormat(
+      //       user.resetPasswordExpires
+      //     )}`,
+      //   });
 
       /* 3 - Décrypter le mot de passe avant de le vérifiez avec celle de la base de donnée qvec bcrypt*/
       const passwordHashed = bcrypt.compareSync(password, user.password);
@@ -308,17 +276,18 @@ module.exports.login = async_handler(async (req, res) => {
     })
     .catch((err) => {
       return res.status(500).send({
-        message: `Erreur interne du serveur, veuillez réessayez plus tard`,
+        message: `Erreur interne du serveur, veuillez réessayez plus tard ${err}`,
       });
     });
 });
-/**Lancement du procédure du changement du mot de passe oublié */
+
+/**3...Lancement du procédure du changement du mot de passe oublié */
 module.exports.forgetPassword = async_handler(async (req, res) => {
   const { email } = req.body;
   let existingUser;
   /**Vérifez si c'est un email ou un si il est vide */
   if (!validator.isEmail(email) || validator.isEmpty(email))
-    return res.status(401).json({ message: `Saisissez un adress mail` });
+    return res.status(401).json({ message: `Saisissez un adress mail valide` });
 
   /**Rechercher l'utilisateur dans la base de donnée */
   try {
@@ -327,25 +296,25 @@ module.exports.forgetPassword = async_handler(async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: `Erreur interne du serveur,veuillez reprendre l'opération du changement du mot de passe`,
+      message: `Erreur interne du serveur,veuillez reprendre l'opération du changement du mot de passe ${error}`,
     });
   }
   if (!existingUser)
     return res.status(401).json({
       message: `Un compte avec ce mail n'existe pas,veuillez vous inscrire d'abord si vous disposer pas d'un compte `,
     });
-  /**Rnvoyer un token dans url avec les l'identifiant de l'utilisateur qui expire dans aprés 1 heure */
+  /**Rnvoyer un token dans url avec les l'identifiant de l'utilisateur qui expire dans aprés 24 heure */
   const resetToken = jwt.sign(
     { _id: existingUser._id },
     process.env.FORGET_PASSWORD_KEY,
     {
-      expiresIn: 3600, // Expire après 1h
+      expiresIn: 3600 * 24, // Expire après 24h
     }
   );
   /**Mettre à jour l'objet resetPasswordToken et resetPasswordExpires */
   await existingUser.updateOne({
     resetPasswordToken: resetToken,
-    resetPasswordExpires: Date.now() + 3600000, // Expire après 1h
+    resetPasswordExpires: Date.now() + 3600000 * 24, // Expire après 24h
   });
   try {
     /**L'url à envoyer dans l'email */
@@ -362,6 +331,7 @@ module.exports.forgetPassword = async_handler(async (req, res) => {
         sendEmail(existingUser.email, `Réinitialisation de mot de passe`, html);
       }
     });
+    /**Envoi du lien sur son numéro de téléphone */
   } catch (error) {
     res
       .status(500)
@@ -373,12 +343,11 @@ module.exports.forgetPassword = async_handler(async (req, res) => {
     message: `Nous venons d'envoyer un lien du changement du mot de passe par e-mail à ${threeFirstWord.substr(
       0,
       8
-    )}*****@gmail.com. Vérifiez dans vos Spams si vous ne retrouvez par l'email. Le code expirera ce ${dateFormat(
-      new Date(Date.now() + 60 * 60 * 1000)
-    )}`,
+    )}*****@gmail.com. Vérifiez dans vos Spams si vous ne retrouvez par l'email, ce code expirera dans les 24h.
+     `,
   });
 });
-/**Changement du mot de passe avec un nouveau mot de passe */
+/**4...Changement du mot de passe avec un nouveau mot de passe */
 module.exports.resetPassword = async_handler(async (req, res) => {
   const { newPass } = req.body;
   /**Vérifions si les informations dans notre url est bien celle de l'user ou il n'a pas été cliquer ou s'il a déjà expirer */
@@ -407,7 +376,7 @@ module.exports.resetPassword = async_handler(async (req, res) => {
     if (user.resetPasswordExpires < Date.now()) {
       return res
         .status(403)
-        .json({ message: "Le jeton de réinitialisation a expiré" });
+        .json({ message: "Le lien de réinitialisation a expiré" });
     }
     /**Crypter le nouveau mot de passe en mettant à jour l'objet password, resetPasswordToken et resetPasswordExpires */
     const hashedPassword = bcrypt.hashSync(newPass, 10);
@@ -418,7 +387,7 @@ module.exports.resetPassword = async_handler(async (req, res) => {
     });
   } catch (error) {
     return res.status(400).json({
-      message: ` Votre lien de vérification à probablement expirer ou a déjà été cliquer. Veuillez recommencer le processus de changement du mot de passe.
+      message: ` Votre lien de vérification à probablement expirer ou a déjà été cliquer. Veuillez recommencer le processus de changement du mot de passe. ${error}
 `,
     });
   }
@@ -428,7 +397,8 @@ module.exports.resetPassword = async_handler(async (req, res) => {
       "Votre mot de passe a été changé avec succès. Veuillez-vous connectez à présent avec le nouveau mot de passe.",
   });
 });
-/**Mettre à jour le profil au cas ou les informations d'inscription sont mal saisir */
+
+/**5...Mettre à jour le profil au cas ou les informations d'inscription sont mal saisir */
 module.exports.update_profil = async_handler(async (req, res) => {
   const { firstName, lastName, tel, email } = req.body;
   /**La méthode ObjectId de mongoose pour vérifer si le nombre de caractère est exacte à celle de mongoose */
@@ -450,7 +420,7 @@ module.exports.update_profil = async_handler(async (req, res) => {
     !validator.isLength(lastName, { min: 2, max: 35 })
   )
     return res.status(401).json({
-      message: `Vérifez si le nom ou prénom est valide`,
+      message: `Vérifez si le nom ou prénom saisir est valide`,
     });
   if (!validator.isEmail(email))
     return res
@@ -458,7 +428,7 @@ module.exports.update_profil = async_handler(async (req, res) => {
       .json({ message: `Votre nouvelle adress email est invalid` });
   if (!validator.isLength(tel, { min: 8, max: 8 }))
     return res.status(401).json({
-      message: `Saisissez un numéro de téléphone du Bénin valide sans espace. Ex : 53000000`,
+      message: `Saisissez un nouveau numéro de téléphone du Bénin valide sans espace. Ex: 53000000`,
     });
   let user;
   user = await User.findById({ _id: req.params.id });
@@ -487,17 +457,20 @@ module.exports.update_profil = async_handler(async (req, res) => {
             message: "Vos informations sont mise à jours",
             docs /**Renvoyer l'user sans son mot de passe */,
           });
-        else res.status(500).json({ message: err });
+        else
+          res.status(500).json({
+            message: `Erreur interne du serveur, veuillez réessayer plus tard !' ${err}`,
+          });
       }
     ).select(`-password`);
   } catch (error) {
     res.status(500).json({
-      message: `Erreur interne du serveur, veuillez réessayer plus tard !'`,
+      message: `Erreur interne du serveur, veuillez réessayer plus tard !' ${error}`,
     });
   }
 });
 
-/*Changer le profil par défaut */
+/*6...Changer le profil par défaut */
 module.exports.upload_profil = async_handler(async (req, res) => {
   /**Vérifier si la taille du fichier ne dépasse 10Mo */
   if (req.file?.size > 1000000)
@@ -543,7 +516,7 @@ module.exports.upload_profil = async_handler(async (req, res) => {
     });
   }
 });
-/**Déconnexion du plateforme */
+/**7...Déconnexion du plateforme */
 module.exports.logOut = async_handler(async (req, res) => {
   /**Récuperer le cookie */
   const cookies = req.headers.cookie;
@@ -568,7 +541,7 @@ module.exports.logOut = async_handler(async (req, res) => {
   });
 });
 
-/**Reçevoir le pdf du règlement intérieur */
+/**8...Reçevoir le pdf du règlement intérieur */
 module.exports.generatePdf = async_handler(async (req, res) => {
   /*Vérifez si l'id est celle de mongoose*/
   if (!ObjectdId.isValid(req.params.id)) {
@@ -614,7 +587,7 @@ module.exports.generatePdf = async_handler(async (req, res) => {
       )
       .text(
         `
-        5-Règles de conduite : Tous les membres doivent se comporter de manière professionnelle et respectueuse envers les autres membres du groupe, les fans et les employeurs. Les comportements inappropriés, tels que l'utilisation de drogues ou d'alcool avant ou pendant les performances, ne sont pas tolérés.
+        5-Règles de conduite : Tous les membres doivent se comporter de manière professionnelle et respectueuse envers les autres membres du groupe, les fans et les employeurs. Les comportements inappropriés, tels que l'utilisation de drogues ou d'alcool avant ou pendant les performances, ne sont pas tolérés en tant que membre du corps de Christ.
 
 `
       )
@@ -636,17 +609,18 @@ module.exports.generatePdf = async_handler(async (req, res) => {
     return res.status(200).json({ message: "Envoi du fichier réussir" });
   } catch (error) {
     return res.status(500).json({
-      message:
-        "Erreur interne du serveur, veuillez réessayer plus tard" + error,
+      message: `Erreur interne du serveur, veuillez réessayer plus tard ${error}`,
     });
   }
 });
 
-/**Supprimez un utilisateur du base de donnée */
+/**9...Supprimez un utilisateur du base de donnée */
 module.exports.deleteUser = async_handler(async (req, res) => {
   /**Vérifez si l'id est conforme à cele de_id mongoose */
   if (!ObjectdId.isValid(req.params.id)) {
-    return res.status(400).json({ message: `Utulisateur inconnu` });
+    return res
+      .status(400)
+      .json({ message: `Utulisateur inconnu ${req.params.id}` });
   }
 
   /**Rechercher l'identifiant avec l'id passer en params */
@@ -661,10 +635,10 @@ module.exports.deleteUser = async_handler(async (req, res) => {
       res.status(200).json({ message: `L'utulisateur supprimez avec succèes` });
     else
       return res.status(500).json({
-        message: `Erreur interne du serveur, veuillez vérifiez votre connexion internet`,
+        message: `Erreur interne du serveur, veuillez réessayez plus tard la suppression de l'utilisateur ${req.params.id}`,
       });
   }).clone();
-}); /**Récuperer touts nos utilisateurs */
+}); /**10...Récuperer touts nos utilisateurs */
 module.exports.getAllUsers = async_handler(async (req, res) => {
   /**Recuperer avec la méthode find de mongoose sans les mots de passe */
   User.find((error, docs) => {
@@ -678,7 +652,7 @@ module.exports.getAllUsers = async_handler(async (req, res) => {
     .sort({ firstName: 1 }); /**Renvoyer par ordre alphabétique */
 });
 
-/**Vérifiez l'id de la transaction du payement s'il est conforme à celle récu de Fedapay */
+/**11...Vérifiez l'id de la transaction du payement s'il est conforme à celle récu de Fedapay */
 module.exports.sendIdTransaction = async_handler(async (req, res) => {
   const { idVerified } = req.body;
   /*Vérifier si l'id paaser en params respect les normes de mongoose */
@@ -689,7 +663,7 @@ module.exports.sendIdTransaction = async_handler(async (req, res) => {
   /*Vérifiez si l'id est de 10 chiffre */
   if (!validator.isLength(idVerified, { min: 10, max: 10 }))
     return res.status(401).json({
-      message: `l'id de transaction n'est pas correct. Saissisez bien les chiffres`,
+      message: `La longeur de l'id de transaction que vous avez réçu de MTN n'est pas correcte. Vérifez bien bien les chiffres`,
     });
   /**Vérifiez si l'identifiant existe */
   let user;
@@ -729,7 +703,7 @@ module.exports.sendIdTransaction = async_handler(async (req, res) => {
   ).clone();
 });
 
-/**Valider la transaction */
+/**12...Valider la transaction envoyer */
 module.exports.validateTransaction = async_handler(async (req, res) => {
   const { idUser, idTransaction } = req.body;
   /*Vérifiez si l'id passé est dans notre base de donné */
@@ -765,7 +739,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       const doc = new PDFDocument();
       const filePath = path.join(
         __dirname,
-        "../client/build/borderau",
+        "../client/public/borderau",
         `${user._id}_carte.pdf`
       );
 
@@ -797,9 +771,12 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       doc.text(
         `adinsiabdias@gmail.com                                     Date:${user.dateVerified}`
       );
-      doc.text(`Moyen de paiement: MTN-Mobile Money`, {
-        align: "right",
-      });
+      doc.text(
+        `Moyen de paiement accepté: MTN-Mobile Money/Moov-Mobile Money`,
+        {
+          align: "right",
+        }
+      );
 
       doc.moveDown();
 
@@ -818,7 +795,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       // Ajout des informations du client
 
       doc.text(
-        `1500 payé par ${user.names} pour sa carte numérique d'identification`,
+        `2500 payé par ${user.names} pour sa carte numérique d'identification personnelle`,
         { align: "center" }
       );
       // Finalisation du document PDF
@@ -846,7 +823,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       const doc = new PDFDocument();
       const filePath = path.join(
         __dirname,
-        "../client/build/borderau/cancel",
+        "../client/public/borderau/cancel",
         `${user._id}_carte.pdf`
       );
       doc.pipe(fs.createWriteStream(filePath));
@@ -863,7 +840,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       });
       doc.text(
         `Reference du compte: #acc_9820942086    N° Recu:nrct${getTimestampMinusNumber(
-          9876543211
+          9876543210
         )}`
       );
       doc.text(
@@ -877,7 +854,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       doc.text(
         `adinsiabdias@gmail.com                                     Date:${user.dateVerified}`
       );
-      doc.text(`Moyen de paiement: MTN-Mobile Money`, {
+      doc.text(`Moyen de paiement: MTN-Mobile Money/ Movv-Mobile Money`, {
         align: "right",
       });
 
@@ -898,7 +875,7 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       // Ajout des informations du client
 
       doc.text(
-        `Vous avez sûrement saisir l'id de transaction mal, si c'est la ces veuillez écrire aux administrateur du groupe pour une correction dans un bred délai.`,
+        `Vous avez sûrement saisir l'id de transaction mal, si c'est le cas, veuillez écrire aux administrateur du groupe pour une correction dans un bref délai.`,
         { align: "center" }
       );
       // Finalisation du document PDF
@@ -908,17 +885,19 @@ module.exports.validateTransaction = async_handler(async (req, res) => {
       return res.status(200).json({ message: "Email envoyé" });
     }
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Erreur interne du serveur" + error });
+    return res.status(500).json({
+      message: `Erreur interne du serveur, veuillez réessayez plus tard ${error}`,
+    });
   }
 });
-/**Recevoir son borderau de paiement s'il veut l'avoir sur la plateforme */
+/**13...Recevoir son borderau de paiement s'il veut l'avoir sur la plateforme */
 module.exports.receiveTransaction = async_handler(async (req, res) => {
   /*Vérifiez si l'id passé est dans notre base de donné */
   let user;
   if (!ObjectdId.isValid(req.params.id)) {
-    return res.status(400).json({ message: `L'identifiant n'existe pas ` });
+    return res
+      .status(400)
+      .json({ message: `L'identifiant n'existe pas ${req.params.id} ` });
   }
   user = await User.findById({ _id: req.params.id });
 
@@ -936,7 +915,7 @@ module.exports.receiveTransaction = async_handler(async (req, res) => {
   }
 });
 
-/**Faire une liste de présence */
+/**14...Faire une liste de présence */
 module.exports.updateUserStatus = async (req, res) => {
   const now = new Date(); // Récupérez la date et l'heure actuelle
   function formatDate(date) {
@@ -968,7 +947,7 @@ module.exports.updateUserStatus = async (req, res) => {
       return res.status(200).json(updatedUser);
     } catch (error) {
       res.status(500).json({
-        message: "Erreur interne du serveur, veuillez réessayez plus tard",
+        message: `Erreur interne du serveur, veuillez réessayez plus tard ${error}`,
       });
     }
   } else if (
@@ -989,44 +968,44 @@ module.exports.updateUserStatus = async (req, res) => {
       return res.status(200).json(updatedUser);
     } catch (error) {
       return res.status(500).json({
-        message: "Erreur interne du serveur, veuillez réessayez plus tard",
+        message: `Erreur interne du serveur, veuillez réessayez plus tard ${error}`,
       });
     }
   } else {
     return res
       .status(400)
       .send(
-        "Vous ne pouvez pas mettre à jour le statut de l'utilisateur pour le moment."
+        "Les membres ne peuvent pas valider ler présence pour le moment. Veuillez commencer les lundis à partir de 17h00 à 20h30"
       );
   }
 };
 
-/**Noter les membres */
+/**15...Noter les membres lors des évaluations */
 module.exports.Evaluer = async_handler(async (req, res) => {
-  /**Verifier s'il existe */
+  /**Verifier si le membre existe existe */
   const { note } = req.body;
-  let user;
   const update = { average: note };
   try {
     await User.findByIdAndUpdate(req.params.id, update, {
       new: true,
     });
 
-    return res.status(200).json({ message: "ok" });
+    return res.status(200).json({ message: "Note ajouter" });
   } catch (error) {
     return res
       .status(500)
       .json({ message: `Erreur interne du serveur ${error}` });
   }
-  /**Mettre à jour sa note */
 });
-/**Renvoyer la liste de présence par nodemailer */
+/**16...Renvoyer la liste de présence par nodemailer */
 module.exports.sendPdfListe = async_handler(async (req, res) => {
   const now = new Date(); // Récupérez la date et l'heure actuelle
-  // if (now.getDay() === 3 && now.getHours() >= 20 && now.getMinutes() > 31) {
 
   try {
-    const users = await User.find({}, "firstName lastName heure status"); // Récupérer tous les utilisateurs avec leurs prénoms, noms, heures et statuts
+    const users = await User.find(
+      {},
+      "firstName lastName heure status isSuperAdmin"
+    ); // Récupérer tous les utilisateurs avec leurs prénoms, noms, heures et statuts
 
     // Créer un tableau HTML pour afficher tous les utilisateurs avec leurs prénoms, noms, heures et statuts
     let tableHTML = `
@@ -1043,6 +1022,7 @@ module.exports.sendPdfListe = async_handler(async (req, res) => {
     `;
 
     users
+      .filter((membre) => membre.isSuperAdmin === false)
       .slice(0, 80)
       .sort()
       .forEach((user) => {
@@ -1063,23 +1043,17 @@ module.exports.sendPdfListe = async_handler(async (req, res) => {
         </tbody>
       </table>
     `;
-    let tableHtmlOne = `
-      <table style="width: 210mm; border-collapse: collapse;">
-        <thead>
-          <tr style="background-color: #ECECEC; border-bottom: 1px solid #CCCCCC; text-align: center;">
-      <th style="padding: 2px; border: 1px solid #CCCCCC;">Nom</th>
-      <th style="padding: 2px; border: 1px solid #CCCCCC;">Prénom</th>
-      <th style="padding: 2px; border: 1px solid #CCCCCC;">Heure d'arrivé</th>
-      <th style="padding: 2px; border: 1px solid #CCCCCC;">Statut</th>
-    </tr>
-        </thead>
-        <tbody>
-    `;
-
+    let user;
+    user = await User.findOne({ _id: req.params.id });
+    if (!user)
+      return res.status(401).json({
+        message: `Vous n'êtes pas sûrement un administrateur`,
+      });
     const mailOptions = {
       from: `La Grâce Parle <${process.env.USER}>`,
-      to: process.env.USER,
-      subject: "Liste de présence des utilisateurs de l'application Fanfare",
+      to: user.email,
+      subject:
+        "Liste de présence des utilisateurs de l'application Fanfare LGP",
       html: tableHTML, // Ajouter le tableau HTML contenant tous les utilisateurs avec leurs prénoms, noms, heures et statuts dans le corps du message
     };
 
@@ -1088,32 +1062,34 @@ module.exports.sendPdfListe = async_handler(async (req, res) => {
         res.status(500).json({ mesage: error });
       } else {
         res.json({
-          message: "La prémière liste de présence a été envoyé avec succès.",
+          message: "La liste de présence a été envoyé avec succès.",
         });
       }
     });
   } catch (error) {
     res.status(500).json({ message: error });
   }
-
-  // }
 });
 
-/**Renvoyer la liste de l'évaluation*/
+/**17...Renvoyer la liste de l'évaluation*/
 module.exports.sendPdfListeEvaluation = async_handler(async (req, res) => {
   const now = new Date(); // Récupérez la date et l'heure actuelle
   // if (now.getDay() === 3 && now.getHours() >= 20 && now.getMinutes() > 31) {
 
   try {
-    const users = await User.find({}, "firstName lastName instrument average"); // Récupérer tous les utilisateurs avec leurs prénoms, noms, heures et statuts
+    const users = await User.find(
+      {},
+      "firstName lastName identification instrument average isSuperAdmin"
+    ); // Récupérer tous les utilisateurs avec leurs prénoms, noms, instrument, average,identification
 
-    // Créer un tableau HTML pour afficher tous les utilisateurs avec leurs prénoms, noms, heures et statuts
+    // Créer un tableau HTML pour afficher tous les utilisateurs avec leurs prénoms, noms, identification, instrument et average
     let tableHTML = `
       <table style="width: 210mm; border-collapse: collapse;">
         <thead>
           <tr style="background-color: #ECECEC; border-bottom: 1px solid #CCCCCC; text-align: center;">
       <th style="padding: 2px; border: 1px solid #CCCCCC;">Nom</th>
       <th style="padding: 2px; border: 1px solid #CCCCCC;">Prénom</th>
+      <th style="padding: 2px; border: 1px solid #CCCCCC;">Identification</th>
       <th style="padding: 2px; border: 1px solid #CCCCCC;">Instrument</th>
       <th style="padding: 2px; border: 1px solid #CCCCCC;">Notes</th>
     </tr>
@@ -1122,6 +1098,7 @@ module.exports.sendPdfListeEvaluation = async_handler(async (req, res) => {
     `;
 
     users
+      .filter((membre) => membre.isSuperAdmin === false)
       .slice(0, 80)
       .sort()
       .forEach((user) => {
@@ -1130,6 +1107,7 @@ module.exports.sendPdfListeEvaluation = async_handler(async (req, res) => {
     <tr style="border-bottom: 1px solid #CCCCCC;">
       <td style="padding: 2px; border: 1px solid #CCCCCC;">${user.firstName}</td>
       <td style="padding: 2px; border: 1px solid #CCCCCC;">${user.lastName}</td>
+      <td style="padding: 2px; border: 1px solid #CCCCCC;">${user.identification}</td>
       <td style="padding: 2px; border: 1px solid #CCCCCC;">${user.instrument}</td>
       <td style="padding: 2px; border: 1px solid #CCCCCC;">${user.average}</td>
     </tr>
@@ -1155,8 +1133,9 @@ module.exports.sendPdfListeEvaluation = async_handler(async (req, res) => {
       if (error) {
         res.status(500).json({ mesage: error });
       } else {
-        res.json({
-          message: "Envoyer",
+        res.status(200).json({
+          message:
+            "Le fichier a bien été envoyer, vous pouvez l'imprimer maintenant",
         });
       }
     });
@@ -1167,6 +1146,31 @@ module.exports.sendPdfListeEvaluation = async_handler(async (req, res) => {
   // }
 });
 
+module.exports.souscrireUnMembre = async_handler(async (req, res) => {
+  /*Vérifiez si l'id passé est dans notre base de donné */
+  let user;
+  if (!ObjectdId.isValid(req.params.id)) {
+    return res
+      .status(400)
+      .json({ message: `L'identifiant n'existe pas ${req.params.id} ` });
+  }
+  user = await User.findById({ _id: req.params.id });
+
+  if (!user)
+    return res.status(400).json({
+      message: "L'identifiant n'existe pas ",
+    });
+  try {
+    await user.updateOne({
+      souscription: "1",
+    });
+    res.status(200).json({
+      message: "Utilisateur souscrire",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error });
+  }
+});
 /**Incrémneter à chaque payement */
 
 module.exports.payement = async_handler(async (req, res) => {

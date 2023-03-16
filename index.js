@@ -52,7 +52,7 @@ cron.schedule(
 );
 // définition de la tâche planifiée
 cron.schedule(
-  "25 21 * * 1",
+  "00 21 * * 1",
   () => {
     User.updateMany(
       { status: { $in: ["", null] } }, //filtre pour sélectionner les utilisateurs avec isVerified vide ou null
@@ -87,10 +87,10 @@ const initializeUsersAverage = async () => {
   }
 };
 
-// Tâche de cron pour initialiser le champ "average" à une valeur vide tous les deux mois (le dimanche à minuit)
+// Tâche de cron pour initialiser le champ "average" à une valeur vide tous les mois (le dimanche à minuit)
 
-cron.schedule("0 0 1 * *", initializeUsersAverage);
-console.log("La tâche d'initialisation a été planifiée.");
+// cron.schedule("0 0 1 * *", initializeUsersAverage);
+// console.log("La tâche d'initialisation a été planifiée.");
 
 // app.use(express.static(path.join(__dirname, "./client/build")));
 // app.use(express.static(path.join(__dirname, "./client/build/image/user")));

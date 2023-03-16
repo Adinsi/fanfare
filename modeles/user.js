@@ -34,6 +34,10 @@ const userSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+    },
     profession: {
       type: String,
       required: true,
@@ -75,6 +79,10 @@ const userSchema = mongoose.Schema(
       default: "",
     },
     average: {
+      type: String,
+      default: "",
+    },
+    souscription: {
       type: String,
       default: "",
     },
