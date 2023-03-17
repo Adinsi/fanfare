@@ -51,7 +51,7 @@ module.exports.register = async_handler(async (req, res) => {
   /*1 - Vérifiez maintenant si les données saisir respecte notre schéma de validation */
 
   if (
-    !validator.isLength(firstName, { min: 2, max: 15 }) ||
+    !validator.isLength(firstName, { min: 3, max: 20 }) ||
     !validator.isLength(lastName, { min: 2, max: 35 })
   )
     return res.status(401).json({
@@ -61,7 +61,10 @@ module.exports.register = async_handler(async (req, res) => {
   if (!validator.isEmail(email))
     return res
       .status(401)
-      .json({ message: `Saisissez un émail valide pour vous inscrire.` });
+      .json({
+        message: `Saisissez un émail valide pour vous inscrire. ex:********@gmail.com`,
+      });
+
   /**Vérifer si les champs sont vides */
   if (
     validator.isEmpty(firstName) ||
@@ -130,16 +133,7 @@ module.exports.register = async_handler(async (req, res) => {
         });
       /**Vérifiez si l''email correspond a celle de l'admin pour lui permetttre d'avoir accès à certaine route */
       function isAdmin() {
-        if (
-          email === process.env.USER_Proph
-
-          // email === process.env.USER_SOPRANO ||
-          // email === process.env.USER_ALTO ||
-          // email === process.env.USER_TENOR ||
-          // email === process.env.USER_BASE ||
-          // email === process.env.USER_DRUM ||
-        )
-          return true;
+        if (email === process.env.USER_SOPRANO) return true;
       }
       function isAdminPupitre() {
         if (email === process.env.ADMINPUPITRE) return true;
@@ -147,12 +141,14 @@ module.exports.register = async_handler(async (req, res) => {
       function isSuperAdmin() {
         if (
           email === process.env.ADMINPUPITRE ||
-          email === process.env.USER_Proph
+          email === process.env.USER_Proph ||
+          email === process.env.USER_DRUM
         )
           return true;
       }
       function isAdminDev() {
-        if (email === process.env.USER) return true;
+        if (email === process.env.USER || email === process.env.USER_Proph)
+          return true;
       }
       /**Enregister user dans la base de donnée */
       const user = await new User({
@@ -1003,6 +999,13 @@ module.exports.Evaluer = async_handler(async (req, res) => {
 /**16...Renvoyer la liste de présence par nodemailer */
 module.exports.sendPdfListe = async_handler(async (req, res) => {
   const now = new Date(); // Récupérez la date et l'heure actuelle
+  function formatDate(date) {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString();
+
+    return `${day}/${month}/${year}`;
+  }
 
   try {
     const users = await User.find(
@@ -1045,6 +1048,8 @@ module.exports.sendPdfListe = async_handler(async (req, res) => {
     tableHTML += `
         </tbody>
       </table>
+      <p>Date:${formatDate(now)} </p>
+      <p>Signature du chef centre : </p>
     `;
     let user;
     user = await User.findOne({ _id: req.params.id });

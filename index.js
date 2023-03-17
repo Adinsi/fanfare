@@ -110,6 +110,9 @@ app.get("/home", function (req, res) {
 app.get("/politique", function (req, res) {
   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
 });
+app.get("/condition", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
 app.get("/partition", function (req, res) {
   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
 });
