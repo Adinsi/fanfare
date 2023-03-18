@@ -59,11 +59,9 @@ module.exports.register = async_handler(async (req, res) => {
     });
   /**Vérifiez s'il respecte le format d'un email grâce à l'expression régulier de validator xxxxxxx@xxxxx.xxx */
   if (!validator.isEmail(email))
-    return res
-      .status(401)
-      .json({
-        message: `Saisissez un émail valide pour vous inscrire. ex:********@gmail.com`,
-      });
+    return res.status(401).json({
+      message: `Saisissez un émail valide pour vous inscrire. ex:********@gmail.com`,
+    });
 
   /**Vérifer si les champs sont vides */
   if (
@@ -1157,6 +1155,17 @@ module.exports.sendPdfListeEvaluation = async_handler(async (req, res) => {
 module.exports.souscrireUnMembre = async_handler(async (req, res) => {
   /*Vérifiez si l'id passé est dans notre base de donné */
   let user;
+  const now = new Date(); // Récupérez la date et l'heure actuelle
+  function formatDate(date) {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString();
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+
+    return `${day}/${month}/${year} - ${hours}:${minutes}`;
+  }
+
   if (!ObjectdId.isValid(req.params.id)) {
     return res
       .status(400)
@@ -1172,8 +1181,83 @@ module.exports.souscrireUnMembre = async_handler(async (req, res) => {
     await user.updateOne({
       souscription: "1",
     });
+    function getTimestampMinusNumber(num) {
+      const currentDate = new Date();
+      const timestamp = Math.floor(currentDate.getTime() / 1000); // convertir en secondes
+      const result = timestamp - num;
+
+      // formater en nombre à 10 chiffres en ajoutant des zéros en début si nécessaire
+      const formattedResult = String(result).padStart(10, "0");
+
+      return Number(formattedResult);
+    }
+    /**Renvoyer le borderau à notre user avec les informations comme son nom complet, l'id de transaction */
+    const doc = new PDFDocument();
+    const filePath = path.join(
+      __dirname,
+      "../client/build/souscription",
+      `${user._id}_souscription.pdf`
+    );
+
+    doc.pipe(fs.createWriteStream(filePath));
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(14)
+      .text("Bordereau de paiement", { align: "left" });
+    doc.moveDown();
+    doc.font("Helvetica").fontSize(12);
+
+    // Ajout des informations de l'entreprise
+    doc.text(`La Grâce Parle`, {
+      align: "left",
+    });
+    doc.text(
+      `Reference du compte: #acc_9820942086    N° Recu:nrct${getTimestampMinusNumber(
+        1123456789
+      )}`
+    );
+    doc.text(
+      `Lot 1515 Maison Jesus est rois                            Reference: tlx_${getTimestampMinusNumber(
+        1987654321
+      )}`
+    );
+    doc.text(
+      `+229 53 03 78 32                                                Id Transaction générer: ${now}`
+    );
+    doc.text(
+      `adinsiabdias@gmail.com                                     Date:${formatDate(
+        now
+      )}`
+    );
+    doc.text(`Moyen de paiement accepté: MTN-Mobile Money/Moov-Mobile Money`, {
+      align: "right",
+    });
+
+    doc.moveDown();
+
+    // Ajout des détails du paiement
+    doc.text(`Payé par : `);
+
+    doc.text(`${user.names}`, {
+      align: "left",
+    });
+    doc.text(`${user.email}`, {
+      align: "left",
+    });
+
+    doc.moveDown();
+
+    // Ajout des informations du client
+
+    doc.text(
+      `750 f payé par ${user.names} pour sa souscription sur l'application fanfare`,
+      { align: "center" }
+    );
+    // Finalisation du document PDF
+    doc.end();
+    /** */
     res.status(200).json({
-      message: "Utilisateur souscrire",
+      message: `Utilisateur souscrire, vous pouvez profitez maintenant des avantages qu'offre l'application pour façiliter la tâche et l'amélioration de performance de nous tous. Merçi et à bientôt ${user.names}`,
     });
   } catch (error) {
     res.status(500).json({ message: error });

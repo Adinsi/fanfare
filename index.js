@@ -158,6 +158,9 @@ app.get("/admin/home-liste", function (req, res) {
 app.get("/admin/home-note", function (req, res) {
   res.sendFile(path.join(__dirname, "./client/build", "index.html"));
 });
+app.get("/souscription", function (req, res) {
+  res.sendFile(path.join(__dirname, "./client/build", "index.html"));
+});
 
 app.use("/api/user", userRoute);
 
